@@ -174,7 +174,7 @@ end
     @testset "prevtype" begin
         @test prevtype("b") == "a"
         @test prevtype(:b) == :a
-        @test prevtype(1) == 2
+        @test prevtype(1) == 0
         @test prevtype(nextfloat(1.0)) == prevfloat(nextfloat(1.0))
         @test prevtype("") == ""
     end
@@ -184,12 +184,15 @@ end
     sv_int = SortedVector([1,2,3])
     sv_float = SortedVector([1., 2., 3.])
     @test @inferred(growlast!(sv_int, 2)) == [1, 2, 3, 4, 5]
-
     @test @inferred(growlast!(sv_float, 1)) == [1., 2., 3., nextfloat(3.)]
+
+    @test @inferred(growfirst!(sv_int, 2)) == [-1, 0, 1, 2, 3, 4, 5]
+    @test @inferred(growfirst!(sv_float, 1)) == [prevfloat(1.), 1., 2., 3., nextfloat(3.)]
 end
 
 @testset "shrink" begin
     sv = SortedVector([1,2,3])
     @test shrinklast!(sv, 1) == [1,2]
+    @test shrinkfirst!(sv, 1) == [2]
 end
 

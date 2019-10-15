@@ -337,7 +337,7 @@ end
 prevtype(x::Symbol) = Symbol(prevtype(string(x)))
 prevtype(x::AbstractChar) = x - 1
 prevtype(x::T) where {T<:AbstractFloat} = prevfloat(x)
-prevtype(x::T) where {T} = x + one(T)
+prevtype(x::T) where {T} = x - one(T)
 
 
 # TODO document what this does and why

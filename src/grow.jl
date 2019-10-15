@@ -87,40 +87,33 @@ Grow the collection `a` from the first position by `n` elements.
 """
 function growfirst!(a, n)
     can_growfirst(a) || error("Type $(typeof(a)) cannot grow.")
-    unsafe_growfirst!(a, n)
+    _growfirst!(order(a), a, n)
     return a
 end
 
-function unsafe_growfirst(a::AbstractRange{T}, i::Integer) where {T}
+function _growfirst(a::AbstractRange{T}, i) where {T}
     setfirst!(a, first(a) - (T(i) * step(a)))
     return nothing
 end
 
-function unsafe_growfirst!(a::AbstractUnitRange{T}, i::Integer) where {T}
+function _growfirst!(a::AbstractUnitRange{T}, i) where {T}
     setfirst!(a, first(a) - T(i))
     return nothing
 end
 
-# TODO is this fast enough?
-function unsafe_growfirst!(a::AbstractVector{T}, n::Integer) where {T}
-    new_element = first(a)
-    if isforward(a)
-        for n in 1:n
-            new_element = prevtype(a)
-            pushfirst!(a, new_element)
-        end
-    elseif isreverse(a)
-        for n in 1:n
-            new_element = nexttype(a)
-            pushfirst!(a, new_element)
-        end
-    else
-        for n in 1:n
-            pushfirst!(a, rand_type(T))
-        end
+
+function _growfirst!(::ReverseOrdering, a::AbstractVector{T}, n) where {T}
+    for i in 1:n
+        pushfirst!(a, nexttype(first(a)))
     end
-    return nothing
 end
+
+function _growfirst!(::ForwardOrdering, a::AbstractVector{T}, n) where {T}
+    for i in 1:n
+        pushfirst!(a, prevtype(first(a)))
+    end
+end
+
 
 """
     growlast(a, i)
