@@ -59,4 +59,34 @@ _searchsortedlast(xo::Ordering, x, val) =
     searchsortedlast(x, val, ordmin(xo, x), ordmax(xo, x), xo)
 _searchsortedlast(::UUOrder, x, val) = searchsortedlast(x, val)
 
-Base.findfirst(f, x::SortedVector) = ordfindfirst(f, parent(x))
+#Base.findfirst(f, x::SortedVector) = ordfindfirst(f, parent(x))
+
+Base.findfirst(f::Function, svr::SortedVector) = _findfirst(f, parent(svr), order(svr))
+Base.findfirst(f::Function, svr::SortedRange) = _findfirst(f, parent(svr), order(svr))
+
+Base.findlast(f::Function, svr::SortedVector) = _findlast(f, parent(svr), order(svr))
+Base.findlast(f::Function, svr::SortedRange) = _findlast(f, parent(svr), order(svr))
+
+Base.findall(f::Function, svr::SortedVecRange) = _findall(f, parent(svr), order(svr))
+Base.findall(f::Function, svr::SortedRange) = _findall(f, parent(svr), order(svr))
+Base.filter(f, svr::SortedVecRange) = _filter(svr, findall(f, svr))
+
+_filter(svr::SortedVecRange, ::Nothing) = empty(svr)
+_filter(svr::SortedVecRange, inds) = @inbounds(getindex(svr, inds))
+
+# count
+Base.count(f::Function, sv::SortedVector) = _count(f, parent(sv), order(sv))
+Base.count(f::Function, sr::SortedRange) = _count(f, parent(sr), order(sr))
+
+_count(f::Function, v::AbstractVector, vo, lo::T=firstindex(v), hi::T=lastindex(v)) where {T<:Integer} = count(f, v)
+function _count(f::Function, v::AbstractVector, vo::RFOrder, lo::T=firstindex(v), hi::T=lastindex(v)) where {T<:Integer}
+    i1 = _findfirst(f, v, vo, lo, hi)
+    isnothing(i1) ? 0 : _findlast(f, v, vo, lo, hi) - i1 + 1
+end
+
+Base.filter(f::Function, sv::SortedVector) = @inbounds(sv[findall(f, sv)])
+Base.filter(f::Function, sr::SortedRange) = @inbounds(sr[findall(f, sr)])
+
+Base.vcat(x::SortedVector, y::AbstractVector) = vcat(parent(x), y)
+Base.vcat(x::SortedVector, y::SortedVector) = vcat(parent(x), parent(y))
+Base.vcat(x::AbstractVector, y::SortedVector) = vcat(x, parent(y))

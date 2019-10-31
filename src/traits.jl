@@ -35,6 +35,9 @@ opposite(::typeof(==)) = (==)
 opposite(::typeof(<=)) = (>=)
 opposite(::typeof(>=)) = (<=)
 
+maybe_flip(xo::O, yo::O, inds) where {O<:Ordering} = inds
+maybe_flip(xo::Ordering, yo::Ordering, inds) = reverse(inds)
+
 """
     order(x) -> Ordering
 
@@ -316,8 +319,8 @@ groupmin(x, y) = _groupmin(order(x), order(y), x, y)
 _groupmin(xo, yo, x, y) = min(ordmin(xo, x), ordmin(yo, y))
 
 
-#opcmpmax(xo, yo, x, y) = ltmax(xo, yo, x, y) ? < : (gtmax(xo, yo, x, y) ? > : ==)
-#opcmpmin(xo, yo, x, y) = ltmin(xo, yo, x, y) ? < : (gtmin(xo, yo, x, y) ? > : ==)
+cmpmax(xo, yo, x, y) = ltmax(xo, yo, x, y) ? -1 : (gtmax(xo, yo, x, y) ? 1 : 0)
+cmpmin(xo, yo, x, y) = ltmin(xo, yo, x, y) ? -1 : (gtmin(xo, yo, x, y) ? 1 : 0)
 
 """
     min_of_groupmax(x, y)
@@ -338,19 +341,6 @@ improved performance.
 """
 max_of_groupmin(x, y) = max_of_groupmin(order(x), order(y), x, y)
 max_of_groupmin(xo, yo, x, y) = max(ordmin(xo, x), ordmin(xo, x))
-
-
-#=
-getbefore(x, i) = x[before_indices(x, i)]
-
-after_inices(x, i) = (searchsortedlast(x, i) + 1):lastindex(x)
-gefirst(x)tafter(x, i) = x[after_inices(x, i)]
-
-within_indices(x, i1, i2) = searchsortedfirst(x, i1):searchsortedlast(x, i2)
-getwithin(x, i1, i2) = x[within_indices(x, i1, i2)]
-
-_overlapping_indices_x(::typeof(<))
-=#
 
 """
     nexttype(x::T)
@@ -379,3 +369,4 @@ prevtype(x::Symbol) = Symbol(prevtype(string(x)))
 prevtype(x::AbstractChar) = x - 1
 prevtype(x::T) where {T<:AbstractFloat} = prevfloat(x)
 prevtype(x::T) where {T} = x - one(T)
+

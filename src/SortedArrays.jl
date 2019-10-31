@@ -34,14 +34,16 @@ export
 include("traits.jl")
 include("shrink.jl")
 include("grow.jl")
+include("findfirst.jl")
+include("findlast.jl")
+include("findall.jl")
 include("sortedvector.jl")
 include("sortedrange.jl")
+include("vcatsort.jl")
 include("vecrange.jl")
 include("getindex.jl")
 include("setindex.jl")
-#include("index_orders.jl")
 include("vcat.jl")
-include("find.jl")
 #include("")
 
 end # module
