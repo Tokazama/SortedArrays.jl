@@ -1,21 +1,18 @@
 module SortedArrays
 
 using Base.Order
-using Base: @propagate_inbounds
+using Base: @propagate_inbounds, tail, front, OneTo
+
+using StaticRanges
+
+using StaticRanges: can_setstep, can_setfirst, can_setlast, Fix2
 
 export
     SortedVector,
-    can_growfirst,
-    can_growlast,
     growlast!,
     growfirst!,
     shrinklast!,
     shrinkfirst!,
-    can_setstep,
-    setfirst!,
-    setlast!,
-    setstep!,
-    has_step,
     isbefore,
     isafter,
     isbefore,
@@ -31,7 +28,8 @@ export
     getafter,
     getwithin,
     nexttype,
-    prevtype
+    prevtype,
+    vcatsort
 
 include("traits.jl")
 include("shrink.jl")
@@ -39,5 +37,11 @@ include("grow.jl")
 include("sortedvector.jl")
 include("sortedrange.jl")
 include("vecrange.jl")
+include("getindex.jl")
+include("setindex.jl")
+#include("index_orders.jl")
+include("vcat.jl")
+include("find.jl")
+#include("")
 
 end # module

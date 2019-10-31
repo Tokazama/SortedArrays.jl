@@ -23,21 +23,11 @@ end
 
     @testset "order" begin
         @test @inferred(order(x)) == Forward
-        @test @inferred(order(y)) == UnkownOrder
-        @test @inferred(order(z)) == UnkownOrder
-        @test @inferred(order(a)) == UnkownOrder
+        @test order(y) == Reverse
+        @test order(z) == Forward
+        @test order(a) == Unordered
         @test @inferred(order(sv1)) == Forward
         @test @inferred(order(sv2)) == Reverse
-    end
-
-
-    # Can't infer type because order not necessarily known at compile time on
-    # these. Only gurantee is that it won't be UnkownOrder
-    @testset "findorder" begin
-        @test findorder(x) == Forward
-        @test findorder(y) == Reverse
-        @test findorder(z) == Forward
-        @test findorder(a) == Unordered
     end
 
     @testset "isbefore" begin
@@ -142,6 +132,7 @@ end
     @testset "max_of_groupmin" begin
     end
 
+    #=
     @testset "getbefore" begin
         @test @inferred(getbefore(1:10, 5)) == 1:4
         @test @inferred(getbefore(1.25:.5:10, 5)) == 1.25:0.5:4.75
@@ -156,12 +147,7 @@ end
         @test @inferred(getwithin(1:10, 2,8)) == 2:8
         @test @inferred(getwithin(1.25:.5:10, 2, 8)) == 2.25:0.5:7.75
     end
-
-    @testset "findclosest" begin
-        @test @inferred(findclosest(1, z)) == 1
-        @test @inferred(findclosest(1.55, z)) == 1
-        @test @inferred(findclosest(1.67, z)) == 2
-    end
+    =#
 
     @testset "nexttype" begin
         @test nexttype("a") == "b"
@@ -196,3 +182,5 @@ end
     @test shrinkfirst!(sv, 1) == [2]
 end
 
+include("find.jl")
+include("vcat.jl")

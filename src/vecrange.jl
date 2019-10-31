@@ -1,5 +1,16 @@
-
 const SortedVecRange{T,P,O} = Union{SortedRange{T,P,O},SortedVector{T,P,O}}
+
+isgrowable(::Type{SortedVector{T,P,O}}) where {T,P,O} = isgrowable(P)
+
+function growlast!(v::SortedVector, i)
+    isgrowable(v) || error("Type $(typeof(v)) cannot grow.")
+    unsafe_growlast!(order(v), parent(v), i)
+    return v
+end
+#isgrowable(::Type{SortedRange{T,P,O}}) where {T,P,O} = isgrowable(P)
+
+ordfindmax(svr::SortedVecRange) = ordfindmax(order(svr), parent(svr))
+ordfindmin(svr::SortedVecRange) = ordfindmax(order(svr), parent(svr))
 
 Base.size(sv::SortedVecRange) = size(parent(sv))
 Base.size(sv::SortedVecRange, i) = size(parent(sv), i)
@@ -23,31 +34,29 @@ end
 
 Base.checkindex(::Type{Bool}, vr::SortedVecRange, i) = checkindex(Bool, parent(r), i)
 
-function Base.getindex(vr::SortedVecRange, i)
-    @boundscheck checkbounds(vr, i)
-    @inbounds _maybe_sorted(vr, sorted_getindex(order(vr), order(i), parent(vr), i))
-end
-
-function _maybe_sorted(sv::SortedVector, vec_and_ord::Tuple{AbstractVector,Ordering})
-    return SortedVector(first(vec_and_ord), last(vec_and_ord), IsSorted)
-end
-
-function _maybe_sorted(sv::SortedRange, vec_and_ord::Tuple{AbstractVector,Ordering})
-    return SortedRange(first(vec_and_ord), last(vec_and_ord), IsSorted)
-end
-
-_maybe_sorted(::SortedVecRange, vec_and_ord::Tuple{Any,Ordering}) = first(vec_and_ord)
-
 function Base.append!(x::SortedVecRange, y::SortedVecRange)
     sorted_append!(order(x), order(y), parent(x), parent(y))
     return x
 end
 
-isgrowable(::Type{<:SortedVecRange{T,P,O}}) where {T,P,O} = isgrowable(P)
-can_growfirst(::Type{<:SortedVecRange{T,P,O}}) where {T,P,O} = can_growfirst(P)
-can_growlast(::Type{<:SortedVecRange{T,P,O}}) where {T,P,O} = can_growfirst(P)
+Base.findmin(svr::SortedVecRange) = ordfindmin(svr)
 
-function growlast!(vr::SortedVecRange, i)
-    _growlast!(order(vr), parent(vr), i)
-    return vr
-end
+Base.findmax(svr::SortedVecRange) = ordfindmax(svr)
+
+Base.maximum(svr::SortedVecRange) = ordmax(order(svr), parent(svr))
+
+Base.minimum(svr::SortedVecRange) = ordmin(order(svr), parent(svr))
+
+Base.searchsortedfirst(svr::SortedVecRange, val) =
+    _searchsortedfirst(order(svr), parent(x), val)
+_searchsortedfirst(xo::Ordering, x, val) =
+    searchsortedfirst(x, val, ordmin(xo, x), ordmax(xo, x), xo)
+_searchsortedfirst(::UUOrder, x, val) = searchsortedfirst(x, val)
+
+Base.searchsortedlast(svr::SortedVecRange, val) =
+    _searchsortedlast(order(svr), parent(x), val)
+_searchsortedlast(xo::Ordering, x, val) =
+    searchsortedlast(x, val, ordmin(xo, x), ordmax(xo, x), xo)
+_searchsortedlast(::UUOrder, x, val) = searchsortedlast(x, val)
+
+Base.findfirst(f, x::SortedVector) = ordfindfirst(f, parent(x))

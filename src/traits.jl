@@ -1,68 +1,58 @@
-"""
-    IsSortedTrait
 
-May be used to signal that a container has already been checked for sorting.
-"""
-struct IsSortedTrait{T} end
-const IsSorted = IsSortedTrait{true}()
-const NotSorted = IsSortedTrait{false}()
+abstract type SortedTrait end
 
-"""
-    UnorderedOrdering
+struct IsSortedTrait <: SortedTrait end
+const IsSorted = IsSortedTrait()
 
-Indicates that a container is not is not forward or reverse ordered.
-"""
+struct NotSortedTrait <: SortedTrait end
+const NotSorted = NotSortedTrait()
+
+"IsUniqueElementsTrait - Indicates that all of a collection's elements are unique."
+struct IsUniqueElementsTrait end
+const IsUniqueElements = IsUniqueElementsTrait()
+
+"NotUniqueElementsTrait - Indicates that all not all of a collection's elements are unique."
+struct NotUniqueElementsTrait end
+const NotUniqueElements = NotUniqueElementsTrait()
+
+"UnorderedOrdering - Indicates that a collection's is not forward or reverse ordered."
 struct UnorderedOrdering <: Ordering end
 const Unordered = UnorderedOrdering()
 
-"""
-    UnorderedOrdering
-
-Indicates that a container's ordering is not known.
-"""
+"UnkownOrdering - Indicates that a collection's ordering is not known."
 struct UnkownOrdering <: Ordering end
 const UnkownOrder = UnkownOrdering()
 
 const RFOrder = Union{ForwardOrdering,ReverseOrdering}
 const UUOrder = Union{UnkownOrdering,UnkownOrdering}
 
-# Note: can't use promote because this is order dependent
-# (the `inds` of `getindex(x, inds)` determines the resulting order)
-combine_getindex_orders(::ForwardOrdering,   ::ForwardOrdering  ) = Forward
-combine_getindex_orders(::ReverseOrdering,   ::ReverseOrdering  ) = Forward
-combine_getindex_orders(::ForwardOrdering,   ::ReverseOrdering  ) = Reverse
-combine_getindex_orders(::ReverseOrdering,   ::ForwardOrdering  ) = Reverse
-combine_getindex_orders(::UnorderedOrdering, ::RFOrder          ) = Unordered
-combine_getindex_orders(::RFOrder,           ::UnorderedOrdering) = Unordered
-combine_getindex_orders(::UnorderedOrdering, ::UnorderedOrdering) = Unordered
-combine_getindex_orders(::UnkownOrdering,    ::Ordering         ) = UnkownOrder
-combine_getindex_orders(::Ordering,          ::UnkownOrdering   ) = UnkownOrder
+# TODO reverse would make more sense here but that would be type piracy
+opposite(::ForwardOrdering) = Reverse
+opposite(::ReverseOrdering) = Forward
+opposite(::typeof(<)) = (>)
+opposite(::typeof(>)) = (<)
+opposite(::typeof(==)) = (==)
+opposite(::typeof(<=)) = (>=)
+opposite(::typeof(>=)) = (<=)
 
 """
     order(x) -> Ordering
+
+Returns the ordering of `x`.
 """
-order(::T) where {T} = order(T)
+order(x::T) where {T} = _order(order(T), x)
+function _order(::UnkownOrdering, x)
+    if isreverse(x)
+        return Reverse
+    elseif isforward(x)
+        return Forward
+    else
+        return Unordered
+    end
+end
+_order(xo::Ordering, x) = xo
 order(::Type{T}) where {T} = UnkownOrder
 order(::Type{T}) where {T<:AbstractUnitRange} = Forward
-
-"""
-    findorder(x) -> Ordering
-
-Returns the `Ordering` of `x`.
-"""
-function findorder(x)
-    ord = order(x)
-    if ord isa UnkownOrdering
-        if isreverse(x)
-            return Reverse
-        elseif isforward(x)
-            return Forward
-        else
-            return Unordered
-        end
-    end
-    return ord
-end
 
 """
     isforward(x) -> Bool
@@ -70,6 +60,8 @@ end
 Returns `true` if `x` is sorted forward.
 """
 isforward(x) = issorted(x)
+isforward(::ForwardOrdering) = true
+isforward(::Ordering) = false
 isforward(::AbstractUnitRange) = true
 isforward(x::AbstractRange) = step(x) > 0
 
@@ -79,6 +71,8 @@ isforward(x::AbstractRange) = step(x) > 0
 Returns `true` if `x` is sorted in reverse.
 """
 isreverse(x) = issorted(x, order=Reverse)
+isreverse(::ReverseOrdering) = true
+isforwardsreverse(::Ordering) = false
 isreverse(::AbstractUnitRange) = false
 isreverse(x::AbstractRange) = step(x) < 0
 
@@ -117,22 +111,56 @@ ordmin(::UnkownOrdering, x) = minimum(x)
 ordmin(::UnorderedOrdering, x) = minimum(x)
 
 """
+    ordfindmax
+"""
+ordfindmax(v) = ordfindmax(order(v), v)
+ordfindmax(::ForwardOrdering, v::AbstractVector) = lastindex(v)
+ordfindmax(::ReverseOrdering, v::AbstractVector) = firstindex(v)
+function ordfindmax(::UUOrder, v::AbstractRange)
+    first(v) < last(v) ? lastindex(v) : firstindex(v)
+end
+ordfindmax(::UUOrder, v::AbstractVector) = findmax(v)
+
+"""
+    ordfindmin
+"""
+ordfindmin(v) = ordfindmin(order(v), v)
+ordfindmin(::ForwardOrdering, v::AbstractVector) = firstindex(v)
+ordfindmin(::ReverseOrdering, v::AbstractVector) = lastindex(v)
+function ordfindmin(::UUOrder, v::AbstractRange)
+    first(v) < last(v) ? firstindex(v) : lastindex(v)
+end
+ordfindmin(::UUOrder, v::AbstractVector) = findmin(v)
+
+"""
     iswithin(x, y) -> Bool
 
 Returns `true` if all of `x` is found within `y`. Does not return `true` if the
 smallest minimum of `x` and `y` are equal or if the maximum of `x` and `y` are
 equal.
 """
+#= TODO delete this garbage once the rest of iswithin is validated
+iswithin(x::AbstractVector, y) = iswithin(order(x), order(y), x, y)
+iswithin(::ForwardOrdering, ::ForwardOrdering, x, y) = (first(x)   > first(y)  ) & (last(x)    < last(y))
+iswithin(::ForwardOrdering, ::ReverseOrdering, x, y) = (first(x)   > last(y)   ) & (last(x)    < first(y))
+iswithin(::ReverseOrdering, ::ForwardOrdering, x, y) = (last(x)    > first(y)  ) & (first(x)   < last(y))
+iswithin(::ReverseOrdering, ::ReverseOrdering, x, y) = (last(x)    > last(y)   ) & (first(x)   < first(y))
+iswithin(::ForwardOrdering, ::UUOrder,         x, y) = (last(x)    < maximum(y)) & (first(x)   > minimum(y))
+iswithin(::ReverseOrdering, ::UUOrder,         x, y) = (first(x)   < maximum(y)) & (last(x)    > minimum(y))
+iswithin(::UUOrder,         ::ForwardOrdering, x, y) = (minimum(x) > first(y)  ) & (maximum(x) < last(y))
+iswithin(::UUOrder,         ::ReverseOrdering, x, y) = (minimum(x) > last(y)   ) & (maximum(x) < first(y))
+iswithin(::UUOrder,         ::UUOrder,         x, y) = (minimum(x) > minimum(y)) & (maximum(x) < maximum(y))
+=#
+
 iswithin(x, y) = iswithin(order(x), order(y), x, y)
-iswithin(::ForwardOrdering, ::ForwardOrdering, x, y) = first(x) > first(y) && last(x) < last(y)
-iswithin(::ForwardOrdering, ::ReverseOrdering, x, y) = first(x) > last(y) && last(x) < first(y)
-iswithin(::ReverseOrdering, ::ForwardOrdering, x, y) = last(x) > first(y) && first(x) < last(y)
-iswithin(::ReverseOrdering, ::ReverseOrdering, x, y) = last(x) > last(y) && first(x) < first(y)
-iswithin(::ForwardOrdering, ::UUOrder,         x, y) = last(x) < maximum(y) && first(x) > minimum(y)
-iswithin(::ReverseOrdering, ::UUOrder,         x, y) = first(x) < maximum(y) && last(x) > minimum(y)
-iswithin(::UUOrder,         ::ForwardOrdering, x, y) = minimum(x) > first(y) && maximum(x) < last(y)
-iswithin(::UUOrder,         ::ReverseOrdering, x, y) = minimum(x) > last(y) && maximum(x) < first(y)
-iswithin(::UUOrder,         ::UUOrder,         x, y) = minimum(x) > minimum(y) && maximum(x) < maximum(y)
+
+function iswithin(xo, yo::ReverseOrdering, x, y)
+    return (last(y) > ordmin(xo, x) || ordmax(xo, x) > first(y)) ? false : true
+end
+function iswithin(xo, yo::ForwardOrdering, x, y)
+    return (first(y) > ordmin(xo, x) || ordmax(xo, x) > last(y)) ? false : true
+end
+iswithin(y) = Fix2(iswithin, y)
 
 """
     isbefore(x::T, y::T, collection::AbstractVector{T}) -> Bool
@@ -143,6 +171,8 @@ function isbefore(x, y, collection)
     findfirst(isequal(x), collection) < findfirst(isequal(y), collection)
 end
 
+
+
 """
     isbefore(x::AbstractVector{T}, y::AbstractVector{T}) -> isbefore(order(x), order(y), x, y)
     isbefore(::Ordering, ::Ordering, x, y) -> Bool
@@ -152,6 +182,14 @@ equivalent to `all(x .< y)`.
 """
 isbefore(x, y) = isbefore(order(x), order(y), x, y)
 isbefore(xo, yo, x, y) = ordmax(xo, x) < ordmin(yo, y)
+
+"""
+    ispartbefore(x, y) -> Bool
+
+Returns `true` if part of the values of `x` is before `y`.
+"""
+ispartbefore(x, y) = ispartbefore(order(x), order(y), x, y)
+ispartbefore(xo, yo, x, y) = ordmin(xo, x) < ordmin(yo, y) < ordmax(xo, x)
 
 """
     isafter(x::T, y::T, collection::AbstractVector{T}) -> Bool
@@ -173,6 +211,14 @@ isafter(x, y) = isafter(order(x), order(y), x, y)
 isafter(xo, yo, x, y) = ordmin(x) > ordmax(y)
 
 """
+    ispartafter(x, y) -> Bool
+
+Returns `true` if part of the values of `x` is after `y`.
+"""
+ispartafter(x, y) = ispartafter(order(x), order(y), x, y)
+ispartafter(xo, yo, x, y) = ordmax(xo, x) > ordmax(yo, y) > ordmin(xo, x)
+
+"""
     iscontiguous(x, y) = iscontiguous(order(x), order(y), x, y)
     iscontiguous(::Ordering, ::Ordering, x, y) -> Bool
 
@@ -192,7 +238,7 @@ julia> iscontiguous(1:3, 4:-1:3) == true
 julia> iscontiguous(1:3, 2:4) == false
 ```
 """
-iscontiguous(x, y) = iscontiguous(findorder(x), findorder(y), x, y)
+iscontiguous(x, y) = iscontiguous(order(x), order(y), x, y)
 function iscontiguous(::ForwardOrdering, yo, x, y)
     return last(x) == ordmin(yo, y) || first(x) == ordmax(yo, y)
 end
@@ -270,6 +316,9 @@ groupmin(x, y) = _groupmin(order(x), order(y), x, y)
 _groupmin(xo, yo, x, y) = min(ordmin(xo, x), ordmin(yo, y))
 
 
+#opcmpmax(xo, yo, x, y) = ltmax(xo, yo, x, y) ? < : (gtmax(xo, yo, x, y) ? > : ==)
+#opcmpmin(xo, yo, x, y) = ltmin(xo, yo, x, y) ? < : (gtmin(xo, yo, x, y) ? > : ==)
+
 """
     min_of_groupmax(x, y)
 
@@ -290,26 +339,18 @@ improved performance.
 max_of_groupmin(x, y) = max_of_groupmin(order(x), order(y), x, y)
 max_of_groupmin(xo, yo, x, y) = max(ordmin(xo, x), ordmin(xo, x))
 
-getbefore(x, i) = x[firstindex(x):(searchsortedfirst(x, i) - 1)]
-getafter(x, i) = x[(searchsortedlast(x, i) + 1):lastindex(x)]
-getwithin(x, i1, i2) = x[searchsortedfirst(x, i1):searchsortedlast(x, i2)]
 
-# From @rafaqz's DimensionalData.jl repository
-"""
-    findclosest(x, collection)
+#=
+getbefore(x, i) = x[before_indices(x, i)]
 
-Returns the index of the closest value to `x` in `collection`.
-"""
-function findclosest(x, collection)
-    ind = searchsortedfirst(collection, x)
-    if ind <= firstindex(collection)
-        return ind
-    elseif abs(collection[ind] - x) < abs(collection[ind-1] - x)
-        return ind
-    else
-        return ind - 1
-    end
-end
+after_inices(x, i) = (searchsortedlast(x, i) + 1):lastindex(x)
+gefirst(x)tafter(x, i) = x[after_inices(x, i)]
+
+within_indices(x, i1, i2) = searchsortedfirst(x, i1):searchsortedlast(x, i2)
+getwithin(x, i1, i2) = x[within_indices(x, i1, i2)]
+
+_overlapping_indices_x(::typeof(<))
+=#
 
 """
     nexttype(x::T)
@@ -338,21 +379,3 @@ prevtype(x::Symbol) = Symbol(prevtype(string(x)))
 prevtype(x::AbstractChar) = x - 1
 prevtype(x::T) where {T<:AbstractFloat} = prevfloat(x)
 prevtype(x::T) where {T} = x - one(T)
-
-
-# TODO document what this does and why
-@propagate_inbounds function sorted_getindex(v, inds)
-    return sorted_getindex(order(sv), order(inds), v, inds)
-end
-
-@propagate_inbounds function sorted_getindex(vo, indso, v, inds)
-    return getindex(v, inds), combine_getindex_orders(vo, indso)
-end
-
-function sorted_checkindex(vo, indso, v, inds)
-    if ordmin(indso, inds) < firstindex(v) || ordmax(indso, inds) > lastindex(v)
-        return false
-    else
-        return true
-    end
-end
