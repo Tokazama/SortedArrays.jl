@@ -1,11 +1,12 @@
 
 abstract type SortedTrait end
 
-struct IsSortedTrait <: SortedTrait end
-const IsSorted = IsSortedTrait()
+"IsOrderedTrait"
+struct IsOrderedTrait <: SortedTrait end
+const IsOrdered = IsOrderedTrait()
 
-struct NotSortedTrait <: SortedTrait end
-const NotSorted = NotSortedTrait()
+struct NotOrderedTrait <: SortedTrait end
+const NotOrdered = NotOrderedTrait()
 
 "IsUniqueElementsTrait - Indicates that all of a collection's elements are unique."
 struct IsUniqueElementsTrait end

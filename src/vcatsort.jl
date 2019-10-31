@@ -13,7 +13,7 @@ function _firstsegment(cmin, cmax, xo::ForwardOrdering, yo, x, y)
     @inbounds return SortedVector(
         vcat(x[_findall(<(cmin), x, xo)], y[maybe_flip(xo, yo, _findall(<(cmin), y, yo))]),
         Forward,
-        IsSorted
+        IsOrdered
     )
 end
 
@@ -21,7 +21,7 @@ function _firstsegment(cmin, cmax, xo::ReverseOrdering, yo, x, y)
     @inbounds return SortedVector(
         vcat(x[_findall(>(cmax), x, xo)], y[maybe_flip(xo, yo, _findall(>(cmax), y, yo))]),
         Reverse,
-        IsSorted
+        IsOrdered
     )
 end
 
@@ -41,7 +41,7 @@ function _middlesegment(cmin, cmax, xo, yo, x, y)
         sort(vcat(x[_findall(iswithin(cmin:cmax), x, xo)],
                   y[_findall(iswithin(cmin:cmax), y, yo)]), order=xo),
         xo,
-        IsSorted
+        IsOrdered
     )
 end
 
@@ -61,7 +61,7 @@ function _lastsegment(cmin, cmax, xo::ReverseOrdering, yo, x, y)
     @inbounds return SortedVector(
         vcat(x[_findall(<(cmin), x, xo)], y[maybe_flip(xo, yo, _findall(<(cmin), y, yo))]),
         Reverse,
-        IsSorted
+        IsOrdered
     )
 end
 
@@ -69,7 +69,7 @@ function _lastsegment(cmin, cmax, xo::ForwardOrdering, yo, x, y)
     @inbounds return SortedVector(
         vcat(x[_findall(>(cmax), x, xo)], y[maybe_flip(xo, yo, _findall(>(cmax), y, yo))]),
         Forward,
-        IsSorted
+        IsOrdered
     )
 end
 
@@ -104,22 +104,22 @@ function __vcatsort(cmin, cmax, xo, yo, x, y)
             _lastsegment(cmin, cmax, xo, yo, x, y)
         ),
         xo,
-        IsSorted
+        IsOrdered
     )
 end
 
 function _vcatbefore(xo, yo, x, y)
     if isforward(xo)
-        return SortedVector(isforward(yo) ? vcat(x, y) : vcat(x, reverse(y)), xo, IsSorted)
+        return SortedVector(isforward(yo) ? vcat(x, y) : vcat(x, reverse(y)), xo, IsOrdered)
     else
-        return SortedVector(isforward(yo) ? vcat(reverse(y), x) : vcat(y, x), xo, IsSorted)
+        return SortedVector(isforward(yo) ? vcat(reverse(y), x) : vcat(y, x), xo, IsOrdered)
     end
 end
 
 function _vcatafter(xo, yo, x, y)
     if isforward(xo)
-        return SortedVector(isforward(yo) ? vcat(y, x) : vcat(reverse(y), x), xo, IsSorted)
+        return SortedVector(isforward(yo) ? vcat(y, x) : vcat(reverse(y), x), xo, IsOrdered)
     else
-        return SortedVector(isforward(yo) ? vcat(x, reverse(y)) : vcat(x, y), xo, IsSorted)
+        return SortedVector(isforward(yo) ? vcat(x, reverse(y)) : vcat(x, y), xo, IsOrdered)
     end
 end

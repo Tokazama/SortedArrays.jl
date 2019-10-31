@@ -43,7 +43,5 @@ include("vcatsort.jl")
 include("vecrange.jl")
 include("getindex.jl")
 include("setindex.jl")
-include("vcat.jl")
-#include("")
 
 end # module

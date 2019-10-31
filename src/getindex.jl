@@ -36,7 +36,7 @@ end
 
 _vec_getindex(xo, x) = x
 _vec_getindex(xo::UUOrder, x::AbstractVector) = x
-_vec_getindex(xo::Ordering, x::AbstractVector) = SortedVector(x, xo, IsSorted)
+_vec_getindex(xo::Ordering, x::AbstractVector) = SortedVector(x, xo, IsOrdered)
 
 function Base.getindex(sr::SortedRange, i)
     @boundscheck checkbounds(sr, i)
@@ -46,7 +46,7 @@ end
 
 _range_getindex(xo, x) = x
 _range_getindex(xo::UUOrder, x::AbstractVector) = x
-_range_getindex(xo::Ordering, x::AbstractVector) = SortedVector(x, xo, IsSorted)
-_range_getindex(xo::Ordering, x::AbstractRange) = SortedRange(x, xo, IsSorted)
+_range_getindex(xo::Ordering, x::AbstractVector) = SortedVector(x, xo, IsOrdered)
+_range_getindex(xo::Ordering, x::AbstractRange) = SortedRange(x, xo, IsOrdered)
 
 
