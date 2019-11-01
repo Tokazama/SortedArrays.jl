@@ -115,26 +115,28 @@ ordmin(::UnkownOrdering, x) = minimum(x)
 ordmin(::UnorderedOrdering, x) = minimum(x)
 
 """
-    ordfindmax
+    find_max(x)
+
+Returns the index of the maximum value for `x`. Differes from `findmax` by
+accounting for any sorting.
 """
-ordfindmax(v) = ordfindmax(order(v), v)
-ordfindmax(::ForwardOrdering, v::AbstractVector) = lastindex(v)
-ordfindmax(::ReverseOrdering, v::AbstractVector) = firstindex(v)
-function ordfindmax(::UUOrder, v::AbstractRange)
-    first(v) < last(v) ? lastindex(v) : firstindex(v)
-end
-ordfindmax(::UUOrder, v::AbstractVector) = findmax(v)
+find_max(v) = find_max(order(v), v)
+find_max(::ForwardOrdering, v::AbstractVector) = lastindex(v)
+find_max(::ReverseOrdering, v::AbstractVector) = firstindex(v)
+find_max(::UUOrder, v::AbstractRange) = first(v) < last(v) ? lastindex(v) : firstindex(v)
+find_max(::UUOrder, v::AbstractVector) = findmax(v)
 
 """
-    ordfindmin
+    find_min(x)
+
+Returns the index of the minimum value for `x`. Differes from `findmin` by
+accounting for any sorting.
 """
-ordfindmin(v) = ordfindmin(order(v), v)
-ordfindmin(::ForwardOrdering, v::AbstractVector) = firstindex(v)
-ordfindmin(::ReverseOrdering, v::AbstractVector) = lastindex(v)
-function ordfindmin(::UUOrder, v::AbstractRange)
-    first(v) < last(v) ? firstindex(v) : lastindex(v)
-end
-ordfindmin(::UUOrder, v::AbstractVector) = findmin(v)
+find_min(v) = find_min(order(v), v)
+find_min(::ForwardOrdering, v::AbstractVector) = firstindex(v)
+find_min(::ReverseOrdering, v::AbstractVector) = lastindex(v)
+find_min(::UUOrder, v::AbstractRange) = first(v) < last(v) ? firstindex(v) : lastindex(v)
+find_min(::UUOrder, v::AbstractVector) = findmin(v)
 
 """
     iswithin(x, y) -> Bool

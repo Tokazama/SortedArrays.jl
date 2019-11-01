@@ -9,8 +9,8 @@ function growlast!(v::SortedVector, i)
 end
 #isgrowable(::Type{SortedRange{T,P,O}}) where {T,P,O} = isgrowable(P)
 
-ordfindmax(svr::SortedVecRange) = ordfindmax(order(svr), parent(svr))
-ordfindmin(svr::SortedVecRange) = ordfindmax(order(svr), parent(svr))
+find_max(svr::SortedVecRange) = find_max(order(svr), parent(svr))
+find_min(svr::SortedVecRange) = find_max(order(svr), parent(svr))
 
 Base.size(sv::SortedVecRange) = size(parent(sv))
 Base.size(sv::SortedVecRange, i) = size(parent(sv), i)
@@ -39,9 +39,9 @@ function Base.append!(x::SortedVecRange, y::SortedVecRange)
     return x
 end
 
-Base.findmin(svr::SortedVecRange) = ordfindmin(svr)
+Base.findmin(svr::SortedVecRange) = find_min(svr)
 
-Base.findmax(svr::SortedVecRange) = ordfindmax(svr)
+Base.findmax(svr::SortedVecRange) = find_max(svr)
 
 Base.maximum(svr::SortedVecRange) = ordmax(order(svr), parent(svr))
 

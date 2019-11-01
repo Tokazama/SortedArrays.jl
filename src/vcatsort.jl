@@ -1,15 +1,15 @@
 """
-    firstsegment
+    first_segment
 """
-firstsegment(x, y) = firstsegment(order(x), order(y), x, y)
-function firstsegment(xo, yo, x, y)
-    return _firstsegment(
+first_segment(x, y) = first_segment(order(x), order(y), x, y)
+function first_segment(xo, yo, x, y)
+    return _first_segment(
         max_of_groupmin(xo, yo, x, y),
         min_of_groupmax(xo, yo, x, y),
         xo, yo, x, y
     )
 end
-function _firstsegment(cmin, cmax, xo::ForwardOrdering, yo, x, y)
+function _first_segment(cmin, cmax, xo::ForwardOrdering, yo, x, y)
     @inbounds return SortedVector(
         vcat(x[_findall(<(cmin), x, xo)], y[maybe_flip(xo, yo, _findall(<(cmin), y, yo))]),
         Forward,
@@ -17,7 +17,7 @@ function _firstsegment(cmin, cmax, xo::ForwardOrdering, yo, x, y)
     )
 end
 
-function _firstsegment(cmin, cmax, xo::ReverseOrdering, yo, x, y)
+function _first_segment(cmin, cmax, xo::ReverseOrdering, yo, x, y)
     @inbounds return SortedVector(
         vcat(x[_findall(>(cmax), x, xo)], y[maybe_flip(xo, yo, _findall(>(cmax), y, yo))]),
         Reverse,
@@ -26,17 +26,17 @@ function _firstsegment(cmin, cmax, xo::ReverseOrdering, yo, x, y)
 end
 
 """
-    middlesegment
+    middle_segment
 """
-middlesegment(x, y) = middlesegment(order(x), order(y), x, y)
-function middlesegment(xo, yo, x, y)
-    return _middlesegment(
+middle_segment(x, y) = middle_segment(order(x), order(y), x, y)
+function middle_segment(xo, yo, x, y)
+    return _middle_segment(
         max_of_groupmin(xo, yo, x, y),
         min_of_groupmax(xo, yo, x, y),
         xo, yo, x, y
     )
 end
-function _middlesegment(cmin, cmax, xo, yo, x, y)
+function _middle_segment(cmin, cmax, xo, yo, x, y)
     @inbounds return SortedVector(
         sort(vcat(x[_findall(iswithin(cmin:cmax), x, xo)],
                   y[_findall(iswithin(cmin:cmax), y, yo)]), order=xo),
@@ -46,18 +46,18 @@ function _middlesegment(cmin, cmax, xo, yo, x, y)
 end
 
 """
-    lastsegment
+    last_segment
 """
-lastsegment(x, y) = lastsegment(order(x), order(y), x, y)
-function lastsegment(xo, yo, x, y)
-    return _lastsegment(
+last_segment(x, y) = last_segment(order(x), order(y), x, y)
+function last_segment(xo, yo, x, y)
+    return _last_segment(
         max_of_groupmin(xo, yo, x, y),
         min_of_groupmax(xo, yo, x, y),
         xo, yo, x, y
     )
 end
 
-function _lastsegment(cmin, cmax, xo::ReverseOrdering, yo, x, y)
+function _last_segment(cmin, cmax, xo::ReverseOrdering, yo, x, y)
     @inbounds return SortedVector(
         vcat(x[_findall(<(cmin), x, xo)], y[maybe_flip(xo, yo, _findall(<(cmin), y, yo))]),
         Reverse,
@@ -65,7 +65,7 @@ function _lastsegment(cmin, cmax, xo::ReverseOrdering, yo, x, y)
     )
 end
 
-function _lastsegment(cmin, cmax, xo::ForwardOrdering, yo, x, y)
+function _last_segment(cmin, cmax, xo::ForwardOrdering, yo, x, y)
     @inbounds return SortedVector(
         vcat(x[_findall(>(cmax), x, xo)], y[maybe_flip(xo, yo, _findall(>(cmax), y, yo))]),
         Forward,
@@ -74,34 +74,34 @@ function _lastsegment(cmin, cmax, xo::ForwardOrdering, yo, x, y)
 end
 
 """
-    vcatsort(x, y)
+    vcat_sort(x, y)
 
 Returns a sorted concatenation of `x` and `y`.
 """
-vcatsort(x) = _vcatsort_one(order(x), x)
-_vcatsort_one(::UnorderedOrdering, x) = sort(x)
-_vcatsort_one(::Ordering, x) = x
+vcat_sort(x) = _vcat_sort_one(order(x), x)
+_vcat_sort_one(::UnorderedOrdering, x) = sort(x)
+_vcat_sort_one(::Ordering, x) = x
 
-vcatsort(x, y) = _vcatsort(order(x), order(y), x, y)
-function _vcatsort(xo, yo, x, y)
+vcat_sort(x, y) = _vcat_sort(order(x), order(y), x, y)
+function _vcat_sort(xo, yo, x, y)
     if isbefore(xo, yo, x, y)
         return _vcatbefore(xo, yo, x, y)
     elseif isafter(xo, yo, x, y)
         return _vcatafter(xo, yo, x, y)
     else
-        return __vcatsort(
+        return __vcat_sort(
             max_of_groupmin(xo, yo, x, y),
             min_of_groupmax(xo, yo, x, y),
             xo, yo, x, y)
     end
 end
 
-function __vcatsort(cmin, cmax, xo, yo, x, y)
+function __vcat_sort(cmin, cmax, xo, yo, x, y)
     return SortedVector(
         vcat(
-            _firstsegment(cmin, cmax, xo, yo, x, y),
-            _middlesegment(cmin, cmax, xo, yo, x, y),
-            _lastsegment(cmin, cmax, xo, yo, x, y)
+            _first_segment(cmin, cmax, xo, yo, x, y),
+            _middle_segment(cmin, cmax, xo, yo, x, y),
+            _last_segment(cmin, cmax, xo, yo, x, y)
         ),
         xo,
         IsOrdered
